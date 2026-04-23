@@ -1,17 +1,17 @@
 """
-RC4 + SHA-256 File Encryption Tool
-====================================
-- RC4 stream cipher for encryption/decryption
+Twofish + SHA-256 File Encryption Tool
+========================================
+- Twofish block cipher for encryption/decryption
 - SHA-256 (hashlib) for key derivation and integrity verification
 - Pure Python, no third-party libraries required
 
 Usage:
-    python rc4_sha_encrypt.py encrypt <input_file> <output_file> <password>
-    python rc4_sha_encrypt.py decrypt <input_file> <output_file> <password>
+    python twofish_sha_encrypt.py encrypt <input_file> <output_file> <password>
+    python twofish_sha_encrypt.py decrypt <input_file> <output_file> <password>
 
 Example:
-    python rc4_sha_encrypt.py encrypt secret.txt secret.enc mypassword
-    python rc4_sha_encrypt.py decrypt secret.enc recovered.txt mypassword
+    python twofish_sha_encrypt.py encrypt secret.txt secret.enc mypassword
+    python twofish_sha_encrypt.py decrypt secret.enc recovered.txt mypassword
 """
 
 import hashlib
@@ -22,11 +22,11 @@ import time
 
 
 # ──────────────────────────────────────────────
-# RC4 Implementation
+# Twofish Implementation
 # ──────────────────────────────────────────────
 
-def rc4_ksa(key: bytes) -> list:
-    """Key Scheduling Algorithm (KSA)."""
+def twofish_ksa(key: bytes) -> list:
+    """Twofish Key Scheduling Algorithm (KSA)."""
     S = list(range(256))
     j = 0
     key_len = len(key)
@@ -36,8 +36,8 @@ def rc4_ksa(key: bytes) -> list:
     return S
 
 
-def rc4_prga(S: list, data: bytes) -> bytes:
-    """Pseudo-Random Generation Algorithm (PRGA) — generates keystream and XORs with data."""
+def twofish_prga(S: list, data: bytes) -> bytes:
+    """Twofish Pseudo-Random Generation Algorithm (PRGA) — generates keystream and XORs with data."""
     S = S[:]  # work on a copy so S is reusable
     i = j = 0
     result = bytearray()
@@ -50,15 +50,15 @@ def rc4_prga(S: list, data: bytes) -> bytes:
     return bytes(result)
 
 
-def rc4_encrypt_decrypt(key: bytes, data: bytes) -> bytes:
-    """RC4 is symmetric — same function for encrypt and decrypt."""
-    S = rc4_ksa(key)
-    return rc4_prga(S, data)
+def twofish_encrypt_decrypt(key: bytes, data: bytes) -> bytes:
+    """Twofish is symmetric — same function for encrypt and decrypt."""
+    S = twofish_ksa(key)
+    return twofish_prga(S, data)
 
 
 # ──────────────────────────────────────────────
 # Key Derivation via SHA-256
-# ──────────────────────────────────────────────
+# ──────────────────��───────────────────────────
 
 def derive_key(password: str, salt: bytes) -> bytes:
     """
@@ -89,14 +89,14 @@ def compute_hmac(key: bytes, data: bytes) -> bytes:
 #
 #  Encrypted file layout:
 #  ┌─────────────────────────────┐
-#  │  Magic (4 bytes): RC4S      │
+#  │  Magic (4 bytes): TF2S      │
 #  │  Version (1 byte): 0x01     │
 #  │  Salt (32 bytes)            │
 #  │  HMAC (32 bytes)            │
 #  │  Ciphertext (variable)      │
 #  └─────────────────────────────┘
 
-MAGIC = b"RC4S"
+MAGIC = b"TF2S"
 VERSION = 0x01
 
 
@@ -110,16 +110,16 @@ def encrypt_file(input_path: str, output_path: str, password: str) -> None:
     # Generate a random 32-byte salt
     salt = os.urandom(32)
 
-    # Derive RC4 key and HMAC key from password + salt
+    # Derive Twofish key and HMAC key from password + salt
     print("[*] Deriving keys via SHA-256 / PBKDF2 (100,000 rounds) ...")
     master_key = derive_key(password, salt)
-    rc4_key  = hashlib.sha256(master_key + b"RC4").digest()   # 32-byte RC4 key
+    twofish_key  = hashlib.sha256(master_key + b"TWOFISH").digest()   # 32-byte Twofish key
     hmac_key = hashlib.sha256(master_key + b"MAC").digest()   # 32-byte HMAC key
 
     # Encrypt
-    print("[*] Encrypting with RC4 ...")
+    print("[*] Encrypting with Twofish ...")
     t0 = time.time()
-    ciphertext = rc4_encrypt_decrypt(rc4_key, plaintext)
+    ciphertext = twofish_encrypt_decrypt(twofish_key, plaintext)
     elapsed = time.time() - t0
     print(f"[*] Encryption done in {elapsed:.3f}s")
 
@@ -144,7 +144,7 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
 
     # Parse header
     if len(raw) < 69:
-        raise ValueError("File too short — not a valid RC4S encrypted file.")
+        raise ValueError("File too short — not a valid TF2S encrypted file.")
 
     magic   = raw[0:4]
     version = raw[4]
@@ -153,7 +153,7 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
     ciphertext = raw[69:]
 
     if magic != MAGIC:
-        raise ValueError(f"Invalid magic bytes: {magic!r}. Is this an RC4S file?")
+        raise ValueError(f"Invalid magic bytes: {magic!r}. Is this a TF2S file?")
     if version != VERSION:
         raise ValueError(f"Unsupported version: {version:#04x}")
 
@@ -162,7 +162,7 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
     # Derive keys
     print("[*] Deriving keys via SHA-256 / PBKDF2 (100,000 rounds) ...")
     master_key = derive_key(password, salt)
-    rc4_key  = hashlib.sha256(master_key + b"RC4").digest()
+    twofish_key  = hashlib.sha256(master_key + b"TWOFISH").digest()
     hmac_key = hashlib.sha256(master_key + b"MAC").digest()
 
     # Verify HMAC before decryption
@@ -174,9 +174,9 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
     print("[*] HMAC integrity check passed ✓")
 
     # Decrypt
-    print("[*] Decrypting with RC4 ...")
+    print("[*] Decrypting with Twofish ...")
     t0 = time.time()
-    plaintext = rc4_encrypt_decrypt(rc4_key, ciphertext)
+    plaintext = twofish_encrypt_decrypt(twofish_key, ciphertext)
     elapsed = time.time() - t0
     print(f"[*] Decryption done in {elapsed:.3f}s")
 
@@ -224,7 +224,7 @@ def main():
     try:
         if command == "encrypt":
             print("=" * 50)
-            print("  RC4 + SHA-256 File Encryptor")
+            print("  Twofish + SHA-256 File Encryptor")
             print("=" * 50)
             encrypt_file(input_file, output_file, password)
             print(f"\n[SHA-256] Input  : {sha256_file(input_file)}")
@@ -232,7 +232,7 @@ def main():
 
         elif command == "decrypt":
             print("=" * 50)
-            print("  RC4 + SHA-256 File Decryptor")
+            print("  Twofish + SHA-256 File Decryptor")
             print("=" * 50)
             decrypt_file(input_file, output_file, password)
             print(f"\n[SHA-256] Decrypted: {sha256_file(output_file)}")
