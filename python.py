@@ -6,15 +6,16 @@ Twofish + SHA-256 File Encryption Tool
 - Pure Python, no third-party libraries required
 
 Usage:
-    python twofish_sha_encrypt.py encrypt <input_file> <output_file> <password>
-    python twofish_sha_encrypt.py decrypt <input_file> <output_file> <password>
+    python python.py encrypt <input_file> <output_file> <password>
+    python python.py decrypt <input_file> <output_file> <password>
 
 Example:
-    python twofish_sha_encrypt.py encrypt secret.txt secret.enc mypassword
-    python twofish_sha_encrypt.py decrypt secret.enc recovered.txt mypassword
+    python python.py encrypt secret.txt secret.enc mypassword
+    python python.py decrypt secret.enc recovered.txt mypassword
 """
 
 import hashlib
+import hmac
 import os
 import sys
 import struct
@@ -58,7 +59,7 @@ def twofish_encrypt_decrypt(key: bytes, data: bytes) -> bytes:
 
 # ──────────────────────────────────────────────
 # Key Derivation via SHA-256
-# ──────────────────��───────────────────────────
+# ──────────────────────────────────────────────
 
 def derive_key(password: str, salt: bytes) -> bytes:
     """
@@ -78,7 +79,6 @@ def derive_key(password: str, salt: bytes) -> bytes:
 
 def compute_hmac(key: bytes, data: bytes) -> bytes:
     """Compute SHA-256 HMAC for integrity verification."""
-    import hmac
     mac = hmac.new(key, data, hashlib.sha256)
     return mac.digest()
 
@@ -101,6 +101,7 @@ VERSION = 0x01
 
 
 def encrypt_file(input_path: str, output_path: str, password: str) -> None:
+    """Encrypt a file using Twofish + SHA-256."""
     print(f"[*] Reading '{input_path}' ...")
     with open(input_path, "rb") as f:
         plaintext = f.read()
@@ -113,7 +114,7 @@ def encrypt_file(input_path: str, output_path: str, password: str) -> None:
     # Derive Twofish key and HMAC key from password + salt
     print("[*] Deriving keys via SHA-256 / PBKDF2 (100,000 rounds) ...")
     master_key = derive_key(password, salt)
-    twofish_key  = hashlib.sha256(master_key + b"TWOFISH").digest()   # 32-byte Twofish key
+    twofish_key = hashlib.sha256(master_key + b"TWOFISH").digest()   # 32-byte Twofish key
     hmac_key = hashlib.sha256(master_key + b"MAC").digest()   # 32-byte HMAC key
 
     # Encrypt
@@ -138,6 +139,7 @@ def encrypt_file(input_path: str, output_path: str, password: str) -> None:
 
 
 def decrypt_file(input_path: str, output_path: str, password: str) -> None:
+    """Decrypt a file using Twofish + SHA-256."""
     print(f"[*] Reading '{input_path}' ...")
     with open(input_path, "rb") as f:
         raw = f.read()
@@ -146,9 +148,9 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
     if len(raw) < 69:
         raise ValueError("File too short — not a valid TF2S encrypted file.")
 
-    magic   = raw[0:4]
+    magic = raw[0:4]
     version = raw[4]
-    salt    = raw[5:37]
+    salt = raw[5:37]
     mac_stored = raw[37:69]
     ciphertext = raw[69:]
 
@@ -162,11 +164,10 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
     # Derive keys
     print("[*] Deriving keys via SHA-256 / PBKDF2 (100,000 rounds) ...")
     master_key = derive_key(password, salt)
-    twofish_key  = hashlib.sha256(master_key + b"TWOFISH").digest()
+    twofish_key = hashlib.sha256(master_key + b"TWOFISH").digest()
     hmac_key = hashlib.sha256(master_key + b"MAC").digest()
 
     # Verify HMAC before decryption
-    import hmac
     mac_computed = compute_hmac(hmac_key, ciphertext)
     if not hmac.compare_digest(mac_stored, mac_computed):
         raise ValueError("❌ HMAC verification FAILED — wrong password or file tampered!")
@@ -191,7 +192,7 @@ def decrypt_file(input_path: str, output_path: str, password: str) -> None:
 # ──────────────────────────────────────────────
 
 def sha256_file(path: str) -> str:
-    """Compute and print the SHA-256 hash of any file."""
+    """Compute and return the SHA-256 hash of any file."""
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
@@ -204,18 +205,20 @@ def sha256_file(path: str) -> str:
 # ──────────────────────────────────────────────
 
 def usage():
+    """Print usage information and exit."""
     print(__doc__)
     sys.exit(1)
 
 
 def main():
+    """Main entry point for the encryption/decryption tool."""
     if len(sys.argv) < 5:
         usage()
 
-    command      = sys.argv[1].lower()
-    input_file   = sys.argv[2]
-    output_file  = sys.argv[3]
-    password     = sys.argv[4]
+    command = sys.argv[1].lower()
+    input_file = sys.argv[2]
+    output_file = sys.argv[3]
+    password = sys.argv[4]
 
     if not os.path.isfile(input_file):
         print(f"[!] Input file not found: '{input_file}'")
