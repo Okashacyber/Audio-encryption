@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twofish Encryption Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Twofish Encryption</h1>
+            <p class="subtitle">Secure file encryption & decryption using Twofish + SHA-256</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="encryptForm" class="form-group">
+                    <!-- Operation Type -->
+                    <div class="form-section">
+                        <label class="label">Operation</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="operation" value="encrypt" checked>
+                                <span>Encrypt</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="operation" value="decrypt">
+                                <span>Decrypt</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- File Input -->
+                    <div class="form-section">
+                        <label for="fileInput" class="label">Select File</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="fileInput" name="file" required>
+                            <label for="fileInput" class="file-label">
+                                <span class="file-icon">📁</span>
+                                <span class="file-text">Choose a file or drag it here</span>
+                            </label>
+                        </div>
+                        <p class="file-info" id="fileInfo"></p>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="form-section">
+                        <label for="password" class="label">Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                placeholder="Enter a strong password"
+                                required
+                            >
+                            <button type="button" class="toggle-password" id="togglePassword">
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Filename (Optional) -->
+                    <div class="form-section">
+                        <label for="outputFilename" class="label">Output Filename (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="outputFilename" 
+                            name="output_filename" 
+                            placeholder="Leave empty for auto-generated name"
+                        >
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <span class="btn-text">Encrypt File</span>
+                        <span class="btn-loader" id="btnLoader"></span>
+                    </button>
+                </form>
+
+                <!-- Status Message -->
+                <div id="statusMessage" class="status-message hidden"></div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="info-section">
+                <h2>ℹ️ How it works</h2>
+                <ul>
+                    <li><strong>Encryption:</strong> Your file is encrypted using Twofish with a SHA-256 derived key</li>
+                    <li><strong>Security:</strong> HMAC verification ensures file integrity</li>
+                    <li><strong>Password:</strong> Use a strong, unique password for best security</li>
+                    <li><strong>PBKDF2:</strong> 100,000 iterations of key stretching to resist brute-force attacks</li>
+                    <li><strong>Download:</strong> After processing, download your file directly</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer>
+            <p>Twofish + SHA-256 | Pure Python Implementation</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
