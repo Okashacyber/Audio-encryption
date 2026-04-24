@@ -206,17 +206,19 @@ def process_file():
 
         # Generate output filename
         original_filename = secure_filename(file.filename)
+        
         if custom_output:
             output_filename = secure_filename(custom_output)
         else:
             if operation_type == 'encrypt':
+                # Keep original extension and add .enc
                 output_filename = original_filename + '.enc'
             else:
                 # Remove .enc extension if present
                 if original_filename.endswith('.enc'):
                     output_filename = original_filename[:-4]
                 else:
-                    output_filename = original_filename + '.dec'
+                    output_filename = original_filename
 
         output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
